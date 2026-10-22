@@ -1,0 +1,104 @@
+import { expect, test } from "@playwright/test";
+test("dashboard renders and fits the viewport", async ({ page }) => {
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Your daily balance" })).toBeVisible();
+  await expect(page.getByText("The everyday thali", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+  await page.screenshot({ path: `test-results/dashboard-${test.info().project.name}.png`, fullPage: true });
+});
+test("text meal can be reviewed, saved, refreshed, edited and deleted", async ({ page }) => {
+  await page.goto("/add");
+  await page.getByRole("button", { name: "Describe it" }).click();
+  await page.getByLabel("Describe your meal").fill("2 rotis and 100g paneer");
+  await page.getByRole("button", { name: "Try demo interpretation" }).click();
+  await expect(page.getByLabel("Grams of Roti / chapati", { exact: true })).toHaveValue("80");
+  await expect(page.getByLabel("Grams of Paneer", { exact: true })).toHaveValue("100");
+  await expect(page.getByRole("button", { name: "Save meal", exact: true })).toBeDisabled();
+  await page.getByLabel("Meal name", { exact: true }).fill("My test thali");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Save meal", exact: true }).click();
+  await expect(page).toHaveURL(/\/history\?date=/);
+  await expect(page.getByText("My test thali", { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Edit My test thali", exact: true }).click();
+  await page.getByLabel("Grams of Paneer", { exact: true }).fill("150");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page.getByText(/Paneer \(150 g\)/)).toBeVisible();
+  await page.getByRole("button", { name: "Delete My test thali", exact: true }).click();
+  await page.getByRole("button", { name: "Delete meal", exact: true }).click();
+  await expect(page.getByText("My test thali", { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Daily food diary" })).toBeVisible();
+  await expect(page.getByText("My test thali", { exact: true })).toHaveCount(0);
+});
+test("goals persist and change the dashboard target", async ({ page }) => {
+  await page.goto("/goals");
+  await page.getByLabel("Calories target", { exact: true }).fill("2500");
+  await page.getByRole("button", { name: "Bulking" }).click();
+  await page.getByRole("button", { name: "Save my goals" }).click();
+  await expect(page.getByRole("status")).toContainText("Your goals have been saved");
+  await page.reload();
+  await expect(page.getByLabel("Calories target", { exact: true })).toHaveValue("2500");
+  await page.goto("/");
+  await expect(page.getByText("of 2,500 kcal", { exact: true })).toBeVisible();
+  await expect(page.getByText("Bulking", { exact: true })).toBeVisible();
+});
+test("recipe creation and edits persist", async ({ page }) => {
+  await page.goto("/recipes");
+  await page.getByLabel("Recipe name", { exact: true }).fill("Sunday dal");
+  await page.getByRole("button", { name: "Add Yellow dal", exact: true }).click();
+  await page.getByLabel("Recipe grams of Yellow dal", { exact: true }).fill("200");
+  await page.getByLabel("Cooked yield (g)", { exact: true }).fill("400");
+  await page.getByRole("button", { name: "Save recipe", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Sunday dal", exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByLabel("Recipe grams of Yellow dal", { exact: true }).fill("300");
+  await page.getByRole("button", { name: "Save recipe", exact: true }).click();
+  await expect(page.getByText("83", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Delete recipe Sunday dal", exact: true }).click();
+  await page.getByRole("button", { name: "Delete recipe", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Sunday dal", exact: true })).toHaveCount(0);
+});
+test("invalid weights block saving and unmatched searches show an empty state", async ({ page }) => {
+  await page.goto("/add");
+  await page.getByRole("button", { name: "Add Paneer", exact: true }).click();
+  await page.getByLabel("Grams of Paneer", { exact: true }).fill("0");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Each weight");
+  await page.getByRole("checkbox").check();
+  await expect(page.getByRole("button", { name: "Save meal", exact: true })).toBeDisabled();
+  await page.getByLabel("Search foods", { exact: true }).fill("not-a-food");
+  await expect(page.getByText(/No matching food/)).toBeVisible();
+});
+test("photo input validates type and supports a local preview", async ({ page }) => {
+  await page.goto("/add");
+  await page.getByRole("button", { name: "Add a photo", exact: true }).click();
+  await page.getByLabel("Meal photo", { exact: true }).setInputFiles({ name: "bad.txt", mimeType: "text/plain", buffer: Buffer.from("no image") });
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Choose a JPEG");
+  await page.getByLabel("Meal photo", { exact: true }).setInputFiles({ name: "meal.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jP1sAAAAASUVORK5CYII=", "base64") });
+  await expect(page.getByAltText("Your selected meal")).toBeVisible();
+  await page.getByRole("button", { name: "Remove photo", exact: true }).click();
+  await expect(page.getByAltText("Your selected meal")).toHaveCount(0);
+});
+test("corrupt storage produces a recoverable error screen", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("nourish-demo-v1", "broken"));
+  await page.goto("/");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Saved demo data could not be read");
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+});
+
+test("a backdated meal opens on its saved date", async ({ page }) => {
+  await page.goto("/add");
+  await page.getByRole("button", { name: "Add Paneer", exact: true }).click();
+  await page.getByLabel("Meal name", { exact: true }).fill("Past meal");
+  await page.getByLabel("Date", { exact: true }).fill("2025-01-15");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Save meal", exact: true }).click();
+  await expect(page).toHaveURL(/date=2025-01-15/);
+  await expect(page.getByText("Past meal", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Past meal", { exact: true })).toBeVisible();
+});
