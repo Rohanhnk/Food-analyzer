@@ -11,8 +11,8 @@ export type MealItem = {
   source: string; sourceVersion: string; basis: FoodRecord["basis"]; confirmed: boolean;
 };
 export type Meal = {
-  id: string; date: string; type: MealType; title: string; items: MealItem[];
-  inputType: "manual" | "text" | "image"; createdAt: string;
+  id: string; date: string; timezone?: string; type: MealType; title: string; items: MealItem[];
+  inputType: "manual" | "text" | "image"; imageId?: string; createdAt: string;
 };
 export type Goal = Nutrients & { mode: "cut" | "maintain" | "bulk" };
 export type Recipe = {

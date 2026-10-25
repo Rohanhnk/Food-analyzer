@@ -13,10 +13,12 @@
     "check": "npm run typecheck && npm run lint && npm test"
   },
   "dependencies": {
+    "@clerk/backend": "^3.26.2",
+    "convex": "^1.48.0",
+    "lucide-react": "^0.468.0",
     "next": "^16.2.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "lucide-react": "^0.468.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
