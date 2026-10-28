@@ -47,7 +47,7 @@ export async function PATCH(
     }
 
     const date = body.date !== undefined ? validateLocalDate(body.date, "date") : existing.date;
-    const timezone = body.timezone !== undefined ? validateTimezone(body.timezone, "timezone") : "Asia/Kolkata";
+    const timezone = body.timezone !== undefined ? validateTimezone(body.timezone, "timezone") : (existing.timezone ?? "UTC");
     const type = body.type !== undefined ? validateMealType(body.type, "type") : existing.type;
     const inputType = body.inputType !== undefined ? validateInputType(body.inputType, "inputType") : existing.inputType;
     const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : existing.title;
@@ -58,6 +58,7 @@ export async function PATCH(
       if (body.items.length === 0) {
         throw badRequest("Field 'items' cannot be empty.", "items");
       }
+      if (body.items.some((item: { confirmed?: unknown }) => !item || item.confirmed !== true)) throw badRequest("Confirm every portion before saving.");
       const calculated = await nutritionService.calculateMealItems(user.userId, body.items);
       items = calculated.items;
     }

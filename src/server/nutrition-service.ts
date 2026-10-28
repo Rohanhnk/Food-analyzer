@@ -5,7 +5,6 @@ import {
   calculateFood,
   calculateMeal,
   calculateRecipe,
-  formatNutrientsForDisplay,
   type RecipeIngredientInput,
 } from "@nourish/nutrition";
 import { validateWeightGrams } from "./validation";
@@ -30,7 +29,7 @@ export class NutritionService {
     ownerId: string,
     inputs: MealItemInput[]
   ): Promise<CalculatedMealResult> {
-    if (!Array.isArray(inputs) || inputs.length === 0) {
+    if (!Array.isArray(inputs) || inputs.length === 0 || inputs.length > 100) {
       throw badRequest("Meal must contain at least one food or recipe item.", "items");
     }
 
@@ -40,6 +39,7 @@ export class NutritionService {
 
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
+      if (!input || typeof input !== "object" || (!!input.foodId === !!input.recipeId)) throw badRequest("Each item must specify exactly one food or recipe.", `items.${i}`);
       const grams = validateWeightGrams(input.grams, `items.${i}.grams`);
       const confirmed = Boolean(input.confirmed);
 
@@ -69,11 +69,12 @@ export class NutritionService {
         const calc = calculateFood(nutritionFood, grams, { confirmed });
         calculatedItems.push(calc);
 
-        const itemNutrients = formatNutrientsForDisplay(calc.nutrients, { kcalDecimals: 1, macroDecimals: 1 });
+        const itemNutrients = calc.nutrients;
 
         mealItems.push({
           id: crypto.randomUUID(),
           foodId: food.id,
+          snapshot: calc.snapshot,
           name: food.name,
           grams,
           nutrients: {
@@ -121,11 +122,13 @@ export class NutritionService {
         const calc = calculateRecipe(recipeRecord, ingredients, grams, { confirmed });
         calculatedItems.push(calc);
 
-        const itemNutrients = formatNutrientsForDisplay(calc.nutrients, { kcalDecimals: 1, macroDecimals: 1 });
+        const itemNutrients = calc.nutrients;
 
         mealItems.push({
           id: crypto.randomUUID(),
           foodId: recipe.id,
+          recipeId: recipe.id,
+          snapshot: calc.snapshot,
           name: recipe.name,
           grams,
           nutrients: {
@@ -147,7 +150,7 @@ export class NutritionService {
     }
 
     const calculatedMeal = calculateMeal(calculatedItems);
-    const roundedTotals = formatNutrientsForDisplay(calculatedMeal.totalNutrients, { kcalDecimals: 1, macroDecimals: 1 });
+    const roundedTotals = calculatedMeal.totalNutrients;
 
     return {
       items: mealItems,

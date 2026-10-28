@@ -65,3 +65,12 @@ export function isBowlUnit(unit: string): boolean {
 export function isSpoonUnit(unit: string): boolean {
   return SPOON_SYNONYMS.has(unit.toLowerCase().trim());
 }
+
+export function canonicalServingUnit(unit: string): string {
+  const value = unit.trim().toLowerCase();
+  if (["tbsp", "tablespoon", "tablespoons"].includes(value)) return "tablespoon";
+  if (["tsp", "teaspoon", "teaspoons"].includes(value)) return "teaspoon";
+  if (["bowl", "bowls", "katori", "katoris"].includes(value)) return "bowl";
+  if (["piece", "pieces", "pc", "pcs"].includes(value)) return "piece";
+  return value.replace(/s$/, "");
+}

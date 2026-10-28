@@ -1,3 +1,17 @@
+# Current implementation and required configuration
+
+Next.js is the only public application API. It verifies Clerk sessions before deriving an owner ID. Convex functions accept calls only from this trusted backend, using a server-only capability (`NOURISH_BACKEND_SECRET`). They are not client APIs: browsers must never receive this key or call these functions directly. This restriction also protects catalog imports and prevents callers from bypassing server nutrient recomputation. Test identities are injected exclusively by Vitest setup, never by the runtime verifier.
+
+Set a cryptographically random `NOURISH_BACKEND_SECRET` of at least 32 characters in **both** the Next.js server environment and the target Convex deployment. Set `NEXT_PUBLIC_CONVEX_URL` to that deployment. Keep `CLERK_SECRET_KEY` on Next.js only. Rotate the backend capability in both places together. Do not log it or enter its value in chat. Convex Clerk JWT configuration is not the authorization mechanism for this server gateway.
+
+All non-test API storage now uses Convex, including meals, recipes, goals, image bytes and idempotency records. Missing configuration returns an explicit service error; there is no in-memory fallback. The browser demo remains independent and stores its own data locally. Deploy the Convex functions/schema before enabling live mode. Import only audited catalog records via the guarded `foods:importCatalog` maintenance function; never automatically seed the provisional reference catalog into production.
+
+Validation uses `convex-test` to execute the actual Convex functions/schema and exercise persistence across adapter instances, access restrictions, ownership and historical goals. These are local integration tests, not evidence of deployment to a real Convex instance. Live Clerk/Convex smoke testing still requires configured credentials and deployment. Verify create/read/edit/delete across server restarts and separate instances before release. Frontend live login/session UI remains separate integration work.
+
+The existing rate limiter and idempotency flow are not yet distributed, atomic request coordination; load/concurrency testing remains a production follow-up. Health responses alone do not prove database access.
+
+---
+
 # Deployment and Operations Guide — Person 2
 
 This guide outlines deployment procedures, operational readiness, health checks, data persistence, and rollback steps for Nourish.
@@ -17,7 +31,7 @@ This guide outlines deployment procedures, operational readiness, health checks,
 
 ## 2. Pinned SDK Versions
 
-The backend dependencies in `package.json` are explicitly pinned to verified compatible releases:
+The lockfile pins installed versions; package.json declares compatible version ranges:
 - Next.js: `^16.2.0` (Turbopack support)
 - React / React DOM: `^19.2.0`
 - Convex: `1.48.0`
@@ -42,10 +56,7 @@ The backend dependencies in `package.json` are explicitly pinned to verified com
    npx convex deploy
    ```
 4. Controlled food catalog ingestion:
-   - Run the controlled import function once during deployment to seed Person 3's verified IFCT catalog:
-     ```bash
-     npx convex run foods:importCatalog
-     ```
+   - Audit food values, source identifiers and redistribution permissions first. The bundled catalog is provisional. Import approved records through `foods:importCatalog` with the server capability using a secure maintenance script; do not place the capability in shell history or client code.
 
 ### Step B: Clerk Authentication Configuration
 1. In Clerk Dashboard:

@@ -80,6 +80,7 @@ export type ProvenanceSnapshot = {
     readonly cookedYieldGrams: number;
     readonly allocationRatio: number;
     readonly ingredientCount: number;
+    readonly ingredients: readonly Readonly<RecipeIngredientInput>[];
   };
 };
 

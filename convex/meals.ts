@@ -1,10 +1,12 @@
+import { requireBackend } from "./gateway";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const listByDate = query({
-  args: { ownerId: v.string(), date: v.string() },
+  args: { backendSecret: v.string(), ownerId: v.string(), date: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     return await ctx.db
       .query("meals")
       .withIndex("by_owner_date", (q: any) =>
@@ -15,8 +17,9 @@ export const listByDate = query({
 });
 
 export const getById = query({
-  args: { ownerId: v.string(), id: v.string() },
+  args: { backendSecret: v.string(), ownerId: v.string(), id: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const meal = await ctx.db
       .query("meals")
       .withIndex("by_owner_meal_id", (q: any) =>
@@ -28,31 +31,31 @@ export const getById = query({
 });
 
 export const listRange = query({
-  args: {
+  args: { backendSecret: v.string(),
     ownerId: v.string(),
     from: v.optional(v.string()),
     to: v.optional(v.string()),
     limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const limit = args.limit ?? 50;
     const meals = await ctx.db
       .query("meals")
       .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
       .collect();
 
-    return meals
-      .filter((m) => {
-        if (args.from && m.date < args.from) return false;
-        if (args.to && m.date > args.to) return false;
-        return true;
-      })
-      .slice(0, limit);
+    const ordered = meals.filter(m => (!args.from || m.date >= args.from) && (!args.to || m.date <= args.to))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id));
+    const start = args.cursor ? ordered.findIndex(m => m.id === args.cursor) + 1 : 0;
+    const page = ordered.slice(start, start + Math.min(Math.max(limit, 1), 100));
+    return { meals: page, nextCursor: start + page.length < ordered.length ? page.at(-1)?.id ?? null : null };
   },
 });
 
 export const save = mutation({
-  args: {
+  args: { backendSecret: v.string(),
     meal: v.object({
       id: v.string(),
       ownerId: v.string(),
@@ -78,6 +81,7 @@ export const save = mutation({
           sourceVersion: v.string(),
           basis: v.union(v.literal("raw"), v.literal("cooked"), v.literal("as-served")),
           confirmed: v.boolean(),
+          recipeId: v.optional(v.string()),
           snapshot: v.optional(v.any()),
         })
       ),
@@ -86,6 +90,7 @@ export const save = mutation({
     }),
   },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const existing = await ctx.db
       .query("meals")
       .withIndex("by_owner_meal_id", (q: any) =>
@@ -104,8 +109,9 @@ export const save = mutation({
 });
 
 export const deleteMeal = mutation({
-  args: { ownerId: v.string(), id: v.string() },
+  args: { backendSecret: v.string(), ownerId: v.string(), id: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const existing = await ctx.db
       .query("meals")
       .withIndex("by_owner_meal_id", (q: any) =>

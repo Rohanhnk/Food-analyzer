@@ -215,12 +215,6 @@ export class InMemoryStorageRepository implements StorageRepository {
       return { goal: { ...eligible[0].goal }, effectiveDate: eligible[0].effectiveDate };
     }
 
-    // If no goal on or before date, return earliest goal or default goal
-    if (userGoals.length > 0) {
-      const sorted = [...userGoals].sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
-      return { goal: { ...sorted[0].goal }, effectiveDate: sorted[0].effectiveDate };
-    }
-
     // Default system goal
     return {
       goal: { mode: "maintain", kcal: 2000, protein: 120, carbs: 220, fat: 65 },

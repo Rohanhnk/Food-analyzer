@@ -1,3 +1,4 @@
+import { foodFromLabel } from "./food-input";
 import type { AppData, AnalysisResult, Goal, Meal, Recipe, TrackerClient } from "./contracts";
 import { demoFoods } from "./demo-foods";
 import { demoItem, localDate, shiftDate, validGrams, validateGoals } from "./model";
@@ -35,8 +36,13 @@ function write(data: AppData) {
 }
 async function change(update: (data: AppData) => AppData) { await pause(); const data = update(read()); write(data); return data; }
 export const demoClient: TrackerClient = {
+  mode: "demo",
+  async saveFood(input, id) {
+    const food = foodFromLabel(input, id ?? `personal_${crypto.randomUUID()}`);
+    await change(d => ({ ...d, foods: [...(d.foods ?? []).filter(f => f.id !== food.id), food] })); return food;
+  },
   async load() { await pause(); return read(); },
-  async searchFoods(query) { await pause(); const q = query.trim().toLowerCase(); return demoFoods.filter(f => `${f.name} ${f.aliases.join(" ")}`.toLowerCase().includes(q)); },
+  async searchFoods(query) { await pause(); const q = query.trim().toLowerCase(); return [...demoFoods, ...(read().foods ?? [])].filter(f => `${f.name} ${f.aliases.join(" ")}`.toLowerCase().includes(q)); },
   async analyzeText(text): Promise<AnalysisResult> {
     await pause();
     // Deterministic demo parser, not an AI call. Unknown phrases are returned for manual resolution.

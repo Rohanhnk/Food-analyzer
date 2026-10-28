@@ -14,6 +14,7 @@ export function getClient(): TrackerClient {
     return liveClientInstance;
   }
 
+  if (mode !== "demo") throw new Error("Set NEXT_PUBLIC_DATA_MODE to live or demo.");
   // Default demo adapter
   return demoClient;
 }

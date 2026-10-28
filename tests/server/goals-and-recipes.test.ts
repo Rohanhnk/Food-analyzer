@@ -119,7 +119,7 @@ describe("Goals (Effective Dating) and Recipe CRUD", () => {
 
       // Exactly 50% of 478 kcal = 239.0 kcal
       expect(meal.items[0].nutrients.kcal).toBeCloseTo(239.0, 1);
-      expect(meal.items[0].nutrients.fat).toBeCloseTo(8.4, 1);
+      expect(meal.items[0].nutrients.fat).toBeCloseTo((1.7 + 15) / 2, 8);
     });
 
     it("rejects recipe creation with non-existent foods or invalid yield", async () => {
@@ -202,4 +202,18 @@ describe("Goals (Effective Dating) and Recipe CRUD", () => {
       expect(recipes.some((r: { id: string }) => r.id === recipe.id)).toBe(false);
     });
   });
+});
+
+it("recomputes recipe edits and ignores forged nutrient values", async () => {
+  defaultStorage.clearAll();
+  const user = "test-user-edit-regression";
+  const recipe = await defaultStorage.saveRecipe(user, { id: "recipe-edit", name: "Recipe", cookedYieldGrams: 200, ingredients: [] });
+  const response = await updateRecipe(new NextRequest("http://localhost/api/recipes/recipe-edit", {
+    method: "PATCH", headers: { authorization: `Bearer ${user}`, "content-type": "application/json" },
+    body: JSON.stringify({ ingredients: [{ foodId: "raw-toor-dal", grams: 100, nutrients: { kcal: 99999, protein: 0, carbs: 0, fat: 0 } }] }),
+  }), { params: Promise.resolve({ id: recipe.id }) });
+  expect(response.status).toBe(200);
+  const result = await response.json();
+  expect(result.recipe.ingredients[0].nutrients.kcal).toBe(343);
+  expect(result.recipe.ingredients[0].snapshot.sourceVersion).toBeDefined();
 });

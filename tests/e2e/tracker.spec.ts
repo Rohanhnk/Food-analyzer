@@ -102,3 +102,53 @@ test("a backdated meal opens on its saved date", async ({ page }) => {
   await page.reload();
   await expect(page.getByText("Past meal", { exact: true })).toBeVisible();
 });
+
+test("custom labels persist, calculate portions, and export saved records", async ({ page }) => {
+  await page.goto("/foods");
+  await page.getByLabel("Food name", { exact: true }).fill("My whey");
+  await page.getByLabel("Label serving weight (g)", { exact: true }).fill("30");
+  await page.getByLabel("Calories (kcal)", { exact: true }).fill("120");
+  await page.getByLabel("Protein (g)", { exact: true }).fill("24");
+  await page.getByLabel("Carbs (g)", { exact: true }).fill("3");
+  await page.getByLabel("Fat (g)", { exact: true }).fill("2");
+  await page.getByLabel("Nutrition source", { exact: true }).fill("My package label");
+  await page.getByRole("button", { name: "Save food", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My whey", exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "My whey", exact: true })).toBeVisible();
+  await page.goto("/add");
+  await page.getByLabel("Search foods", { exact: true }).fill("My whey");
+  await page.getByRole("button", { name: "Add My whey", exact: true }).click();
+  await page.getByLabel("Grams of My whey", { exact: true }).fill("45");
+  await page.getByLabel("Meal name", { exact: true }).fill("My personal shake");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Save meal", exact: true }).click();
+  await expect(page.getByText("My personal shake", { exact: true })).toBeVisible();
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export all meals (CSV)", exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("nourish-meals.csv");
+  const stream = await download.createReadStream(); const chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+  const csv = Buffer.concat(chunks).toString("utf8");
+  expect(csv).toContain("My personal shake"); expect(csv).toContain('"36"'); expect(csv).toContain("protein_g");
+});
+
+test("saved recipes can be logged by cooked portion weight", async ({ page }) => {
+  await page.goto("/recipes");
+  await page.getByLabel("Recipe name", { exact: true }).fill("My rice bowl");
+  await page.getByRole("button", { name: "Add Steamed rice", exact: true }).click();
+  await page.getByLabel("Recipe grams of Steamed rice", { exact: true }).fill("200");
+  await page.getByLabel("Cooked yield (g)", { exact: true }).fill("400");
+  await page.getByRole("button", { name: "Save recipe", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My rice bowl", exact: true })).toBeVisible();
+  await page.goto("/add");
+  await page.getByRole("button", { name: "Add recipe My rice bowl", exact: true }).click();
+  await page.getByLabel("Grams of My rice bowl", { exact: true }).fill("150");
+  await page.getByLabel("Meal name", { exact: true }).fill("Recipe portion test");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Save meal", exact: true }).click();
+  await expect(page.getByText("Recipe portion test", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("My rice bowl (150 g)", { exact: true })).toBeVisible();
+});

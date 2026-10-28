@@ -1,7 +1,7 @@
 import type { FoodRecord } from "../types";
 import rawData from "./indian-foods-reference.json";
 
-/** Strongly-typed verified Indian reference foods from IFCT 2017 & USDA FoodData Central. */
+/** Provisional reference fixtures. Legacy export name is not verification; see DATA_ATTRIBUTION.md. */
 export const VERIFIED_REFERENCE_FOODS: readonly FoodRecord[] = Object.freeze(
   (rawData as FoodRecord[]).map(food =>
     Object.freeze({

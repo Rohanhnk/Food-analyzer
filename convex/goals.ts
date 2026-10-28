@@ -1,10 +1,12 @@
+import { requireBackend } from "./gateway";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getEffective = query({
-  args: { ownerId: v.string(), date: v.string() },
+  args: { backendSecret: v.string(), ownerId: v.string(), date: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const goals = await ctx.db
       .query("goals")
       .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
@@ -18,16 +20,12 @@ export const getEffective = query({
       return eligible[0];
     }
 
-    if (goals.length > 0) {
-      return goals.sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate))[0];
-    }
-
     return null;
   },
 });
 
 export const save = mutation({
-  args: {
+  args: { backendSecret: v.string(),
     ownerId: v.string(),
     effectiveDate: v.string(),
     mode: v.union(v.literal("cut"), v.literal("maintain"), v.literal("bulk")),
@@ -37,6 +35,7 @@ export const save = mutation({
     fat: v.number(),
   },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const goals = await ctx.db
       .query("goals")
       .withIndex("by_owner_date", (q: any) =>
@@ -45,7 +44,8 @@ export const save = mutation({
       .first();
 
     const record = {
-      ...args,
+      ownerId: args.ownerId, effectiveDate: args.effectiveDate, mode: args.mode,
+      kcal: args.kcal, protein: args.protein, carbs: args.carbs, fat: args.fat,
       createdAt: new Date().toISOString(),
     };
 

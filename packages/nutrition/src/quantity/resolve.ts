@@ -6,7 +6,7 @@ import type {
   ServingDefinition,
 } from "../types";
 import { validateGrams } from "./validation";
-import { isBowlUnit, isGramUnit, isPieceUnit, isSpoonUnit } from "./units";
+import { canonicalServingUnit, isBowlUnit, isGramUnit, isPieceUnit, isSpoonUnit } from "./units";
 
 /**
  * Resolves a portion candidate into an exact gram weight or returns needs_confirmation.
@@ -85,6 +85,11 @@ export function resolveQuantity(
       return nc;
     }
 
+    if (canonicalServingUnit(rawUnit) !== canonicalServingUnit(servingDefinition.unit)) {
+      return { status: "needs_confirmation", reason: "unit_requires_serving_definition",
+        message: `A ${servingDefinition.unit} definition cannot resolve ${candidate.unit}. Select the matching serving or enter grams.`,
+        candidate, suggestedServing: servingDefinition };
+    }
     // Serving definition is available
     const totalGrams = candidate.quantity * servingDefinition.grams;
     validateGrams(totalGrams, "calculated serving weight");

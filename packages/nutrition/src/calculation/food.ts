@@ -25,6 +25,7 @@ export function calculateFood(
   validateGrams(grams, "food portion");
 
   const calculatedNutrients = scaleNutrients(food.per100g, grams);
+  const per100gSnapshot = Object.freeze({ ...food.per100g });
   const now = options?.calculatedAt ?? new Date().toISOString();
   const warnings: string[] = [];
 
@@ -40,7 +41,7 @@ export function calculateFood(
     sourceId: food.sourceId,
     basis: food.basis,
     grams,
-    per100gSnapshot: food.per100g,
+    per100gSnapshot,
     calculatedAt: now,
     method: "food_per100g",
     uncertaintyWarnings: warnings.length ? Object.freeze(warnings) : undefined,
@@ -53,7 +54,7 @@ export function calculateFood(
     itemType: "food",
     grams,
     nutrients: calculatedNutrients,
-    per100g: food.per100g,
+    per100g: per100gSnapshot,
     basis: food.basis,
     source: food.source,
     sourceVersion: food.sourceVersion,

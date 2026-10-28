@@ -111,6 +111,8 @@ Use a small licensed reference dataset and an in-memory repository. Tests run en
 
 ## Person 4 — AI interpretation and evaluation
 
+Implementation status: standalone recognition package, provider adapter, API orchestration, live photo UI and offline regression tests are implemented. See `packages/recognition/README.md`. Live provider validation and independently measured photo evaluation remain outstanding.
+
 ### Scope and implementation sequence
 
 1. **Provider-independent package.** Create `packages/recognition` with a `ModelProvider` interface. Public functions accept text or an authorized image reference and return structured `DetectedFood[]`. Use mock provider outputs by default in unit tests.

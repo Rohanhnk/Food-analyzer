@@ -4,7 +4,7 @@ import { storage } from "@/server";
 import { badRequest, handleRouteError, notFound } from "@/server/errors";
 import { validateWeightGrams } from "@/server/validation";
 import type { MealItem, Recipe } from "@/lib/contracts";
-import { calculateFood, formatNutrientsForDisplay } from "@nourish/nutrition";
+import { calculateFood } from "@nourish/nutrition";
 
 export async function GET(req: NextRequest) {
   try {
@@ -66,11 +66,12 @@ export async function POST(req: NextRequest) {
         { confirmed: true }
       );
 
-      const display = formatNutrientsForDisplay(calc.nutrients, { kcalDecimals: 1, macroDecimals: 1 });
+      const display = calc.nutrients;
 
       ingredients.push({
         id: crypto.randomUUID(),
         foodId: food.id,
+        snapshot: calc.snapshot,
         name: food.name,
         grams,
         nutrients: {

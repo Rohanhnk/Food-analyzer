@@ -1,10 +1,12 @@
+import { requireBackend } from "./gateway";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const listByOwner = query({
-  args: { ownerId: v.string() },
+  args: { backendSecret: v.string(), ownerId: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     return await ctx.db
       .query("recipes")
       .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
@@ -13,8 +15,9 @@ export const listByOwner = query({
 });
 
 export const getById = query({
-  args: { ownerId: v.string(), id: v.string() },
+  args: { backendSecret: v.string(), ownerId: v.string(), id: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     return await ctx.db
       .query("recipes")
       .withIndex("by_owner_recipe_id", (q: any) =>
@@ -25,7 +28,7 @@ export const getById = query({
 });
 
 export const save = mutation({
-  args: {
+  args: { backendSecret: v.string(),
     recipe: v.object({
       id: v.string(),
       ownerId: v.string(),
@@ -48,6 +51,8 @@ export const save = mutation({
           sourceVersion: v.string(),
           basis: v.union(v.literal("raw"), v.literal("cooked"), v.literal("as-served")),
           confirmed: v.boolean(),
+          recipeId: v.optional(v.string()),
+          snapshot: v.optional(v.any()),
         })
       ),
       version: v.optional(v.string()),
@@ -57,6 +62,7 @@ export const save = mutation({
     }),
   },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const existing = await ctx.db
       .query("recipes")
       .withIndex("by_owner_recipe_id", (q: any) =>
@@ -75,8 +81,9 @@ export const save = mutation({
 });
 
 export const deleteRecipe = mutation({
-  args: { ownerId: v.string(), id: v.string() },
+  args: { backendSecret: v.string(), ownerId: v.string(), id: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const existing = await ctx.db
       .query("recipes")
       .withIndex("by_owner_recipe_id", (q: any) =>

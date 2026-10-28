@@ -98,6 +98,9 @@ export function calculateRecipe(
       cookedYieldGrams: recipe.cookedYieldGrams,
       allocationRatio,
       ingredientCount: ingredients.length,
+      ingredients: Object.freeze(ingredients.map(ingredient => Object.freeze({
+        ...ingredient, nutrientsPer100g: Object.freeze({ ...ingredient.nutrientsPer100g }),
+      }))),
     }),
   });
 

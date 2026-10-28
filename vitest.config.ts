@@ -5,11 +5,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@nourish/recognition": path.resolve(__dirname, "./packages/recognition/src/index.ts"),
       "@nourish/nutrition": path.resolve(__dirname, "./packages/nutrition/src/index.ts"),
     },
   },
   test: {
     include: ["tests/**/*.test.ts", "packages/**/*.test.ts"],
     environment: "node",
+    setupFiles: ["./tests/server/setup.ts"],
   },
 });

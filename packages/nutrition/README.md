@@ -16,7 +16,7 @@ packages/nutrition/
 │   ├── quantity/                  # Gram validation & portion resolution
 │   ├── matching/                  # Alias normalization & ranked search
 │   ├── repository/                # FoodRepository interface & in-memory store
-│   ├── data/                      # 30 verified Indian food records (IFCT/USDA)
+│   ├── data/                      # 30 provisional reference food records
 │   ├── ingestion/                 # Repeatable catalog validator & importer
 │   └── evaluation/                # Measured test cases & deviation reporting
 └── tests/                         # Full offline test suite
@@ -56,10 +56,10 @@ packages/nutrition/
 
 ---
 
-## Verified Reference Dataset
+## Provisional Reference Dataset
 
 - **30 Common Indian Staple Foods**: Whole wheat roti, plain paratha, boiled white rice, brown rice, raw basmati rice, toor dal, moong dal, chana dal, chole, rajma, fresh paneer, whole milk curd/dahi, cow's milk, buffalo milk, desi ghee, mustard oil, steamed idli, plain dosa, sambar, palak paneer, aloo gobi, bhindi masala, chicken curry, chicken breast, boiled egg, egg omelette, masala chai, fresh banana, and cooked poha.
-- **Authoritative Provenance**: Indian Food Composition Tables (IFCT 2017, ICMR-NIN) and USDA FoodData Central.
+- **Claimed references (pending per-record audit)**: Indian Food Composition Tables (IFCT 2017, ICMR-NIN) and USDA FoodData Central.
 - Full licensing and citation terms documented in [DATA_ATTRIBUTION.md](./DATA_ATTRIBUTION.md).
 
 ---
@@ -112,3 +112,5 @@ Evaluation covers:
 5. Serving definition ambiguity and confirmation flows.
 6. Indian regional alias ranking and generic term disambiguation.
 7. Fractional and boundary quantities (0.5 roti, negative weights, NaN, unreasonable weights).
+
+The historical export name `VERIFIED_REFERENCE_FOODS` is retained for compatibility; it is not a certification. See DATA_ATTRIBUTION.md. Do not automatically import these records into live storage.

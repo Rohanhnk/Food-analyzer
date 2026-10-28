@@ -1,3 +1,4 @@
+import { requirePersonalAccount } from "./personal-access";
 import { NextRequest } from "next/server";
 import { unauthenticated } from "./errors";
 
@@ -21,8 +22,7 @@ export interface AuthVerifier {
  * Rules:
  * - Server derives owner identity from Authorization header or Clerk session.
  * - Client-supplied `userId` is NEVER trusted for authorization.
- * - In test environment or when CLERK_SECRET_KEY is not configured, supports
- *   deterministic test identities (Bearer test-user-A, Bearer test-user-B).
+ * - Every runtime request is verified by Clerk. Tests inject an isolated verifier.
  */
 export class ServerAuthVerifier implements AuthVerifier {
   async verifyRequest(req: NextRequest): Promise<AuthUser | null> {
@@ -37,16 +37,6 @@ export class ServerAuthVerifier implements AuthVerifier {
       return null;
     }
 
-    // Check for test identities (allows running tests and offline development without external Clerk API)
-    if (token.startsWith("test-user-") || token.startsWith("user_test_")) {
-      return {
-        userId: token,
-        tokenIdentifier: `https://clerk.test.dev|${token}`,
-        email: `${token}@test.nourish.app`,
-        name: `Test User ${token}`,
-      };
-    }
-
     // In live mode, verify using Clerk secret key if provided
     const secretKey = process.env.CLERK_SECRET_KEY;
     if (secretKey) {
@@ -54,7 +44,7 @@ export class ServerAuthVerifier implements AuthVerifier {
         // Dynamic import to avoid hard runtime failure if Clerk is not configured
         const { createClerkClient } = await import("@clerk/backend");
         const clerk = createClerkClient({ secretKey });
-        const requestState = await clerk.authenticateRequest(req);
+        const requestState = await clerk.authenticateRequest(req, { authorizedParties: process.env.APP_ORIGIN ? [process.env.APP_ORIGIN] : undefined });
 
         if (!requestState.isSignedIn) {
           return null;
@@ -98,5 +88,6 @@ export async function requireAuth(req: NextRequest): Promise<AuthUser> {
   if (!user || !user.userId) {
     throw unauthenticated("Authentication required. Missing or invalid authorization token.");
   }
+  if (process.env.NODE_ENV !== "test" || process.env.PERSONAL_USER_ID) requirePersonalAccount(user.userId);
   return user;
 }

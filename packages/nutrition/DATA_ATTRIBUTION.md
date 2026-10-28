@@ -1,6 +1,6 @@
 # Nutrition Data Attribution and Catalog Licensing
 
-This document records the provenance, licensing, citation rules, and measurement bases for the verified reference nutrition dataset in `@nourish/nutrition`.
+The bundled dataset is provisional. Source names/IDs are supplied references, not evidence that each cooked dish was transcribed from an authoritative table. No per-record source audit or redistribution permission has been verified in this change. Do not ship it as verified nutrition data. Record table/page or FDC identifiers and derivations, including recipe ingredients and yield, before approval.
 
 ## Authoritative Reference Sources
 
@@ -8,13 +8,7 @@ This document records the provenance, licensing, citation rules, and measurement
 - **Publisher**: National Institute of Nutrition (NIN), Indian Council of Medical Research (ICMR), Department of Health Research, Ministry of Health and Family Welfare, Government of India.
 - **Citation**:
   > Longvah, T., Ananthan, R., Bhaskarachary, K., & Venkaiah, K. (2017). *Indian Food Composition Tables*. National Institute of Nutrition, Indian Council of Medical Research, Hyderabad, India. ISBN: 978-93-84572-02-0.
-- **Terms & Redistribution**:
-  - ICMR-NIN provides nutrient values for research, academic, healthcare, and digital health applications under public health dissemination and fair-use informational principles.
-  - Commercial and public products must acknowledge ICMR-NIN as the authoritative source and cite the 2017 publication.
-  - The tables must not be modified or represented as proprietary data.
-- **Methodology**:
-  - Primary analytical values derived from representative multi-regional sampling across India.
-  - Energy (`kcal`) is determined by physiological fuel factors and validated bomb calorimetry, not simplified Atwater estimates.
+- **Terms & Redistribution**: Obtain and review the publisher's actual terms before redistributing these values. Citation alone does not establish permission. Earlier fair-use/dissemination claims in this document were unsupported and have been removed.
 
 ### 2. USDA FoodData Central (FDC)
 - **Publisher**: Agricultural Research Service (ARS), United States Department of Agriculture (USDA).

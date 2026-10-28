@@ -1,16 +1,19 @@
+import { requireBackend } from "./gateway";
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const listAll = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { backendSecret: v.string(),},
+  handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     return await ctx.db.query("foods").collect();
   },
 });
 
 export const getById = query({
-  args: { id: v.string() },
+  args: { backendSecret: v.string(), id: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     return await ctx.db
       .query("foods")
       .withIndex("by_food_id", (q) => q.eq("id", args.id))
@@ -19,8 +22,9 @@ export const getById = query({
 });
 
 export const search = query({
-  args: { query: v.string() },
+  args: { backendSecret: v.string(), query: v.string() },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     const q = args.query.toLowerCase().trim();
     if (!q) return [];
 
@@ -34,7 +38,7 @@ export const search = query({
 });
 
 export const importCatalog = mutation({
-  args: {
+  args: { backendSecret: v.string(),
     foods: v.array(
       v.object({
         id: v.string(),
@@ -76,6 +80,7 @@ export const importCatalog = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    requireBackend(args.backendSecret);
     let imported = 0;
     for (const food of args.foods) {
       const existing = await ctx.db

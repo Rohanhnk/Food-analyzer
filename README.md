@@ -1,66 +1,59 @@
 # Nourish · Food Analyzer
 
-An Indian-food-aware calorie and macro tracker. **Person 1's standalone frontend is implemented.** It runs without credentials using an asynchronous demo adapter and browser storage. Demo nutrition is illustrative and must not be used as authoritative food data.
+A personal food diary for tracking protein, carbohydrates, fat and calories from weighed food portions and homemade recipes.
 
-## Start development
+**Start here: [Personal-use setup](docs/PERSONAL_USE.md).** The code supports private Clerk sign-in and Convex storage. Live service credentials and deployment still need to be configured. AI is optional and disabled by default.
 
-Requirements: Node.js 22+ (tested on Node 24), npm, and a browser with local storage enabled.
+## Daily workflow
+
+1. Add your regular foods in **My foods** using packaging labels or reliable references. Enter the label's serving weight and corresponding nutrients; the app converts them to per 100 g.
+2. Log a weighed portion, check its raw/cooked basis, review server-calculated totals and confirm the meal.
+3. Save homemade recipes with ingredient weights and finished cooked yield, then log a weighed cooked portion.
+4. View daily totals and history, edit/delete entries, adjust targets and export meal records as CSV.
+
+Unedited saved meals retain their nutrition snapshots when food data changes. Live records are kept in Convex, not browser storage. The demo remains a separate, clearly marked local workspace with illustrative sample records; demo data does not migrate automatically.
+
+## Run locally
+
+Node.js 22+ and npm are required (validated here with Node 24).
 
 ```bash
-cd /workspace/Food-analyzer
 npm ci
 npm run dev
 ```
 
-The server listens on port 3000. `NEXT_PUBLIC_DATA_MODE` defaults to `demo`; `.env.example` documents it. Live mode is deliberately not enabled until an authenticated backend adapter exists.
+The default is demo mode on port 3000. For private live use, follow `docs/PERSONAL_USE.md`, fill `.env.local` securely, then run:
 
-## Implemented screens
+```bash
+npm run doctor
+npm run dev
+```
 
-| Route | Functionality |
-|---|---|
-| `/` | Daily calorie/macro balance, date selection, meals, seven-day chart |
-| `/add` | Food search, manual grams, demo text interpretation, photo preview, review/confirmation and save |
-| `/history` | Dated diary, edit/delete confirmation and persistent snapshots |
-| `/goals` | Cut/maintain/bulk selection and editable calorie/macro targets |
-| `/recipes` | Ingredient lists, weight edits, cooked yield, per-100g preview, recipe CRUD |
-| `/insights` | Seven-day logged intake, logged-day averages and meal counts |
-
-A fresh browser is seeded with sample meals. Changes are stored under `nourish-demo-v1` in local storage. Clear that site storage entry to reset the demo. Uploaded photos stay in memory, are not sent to a server, and are not retained with saved meals.
+The setup checker prints names/status only, never secret values. It does not verify live credentials or connectivity. Public environment settings require a rebuild when changed.
 
 ## Validation
 
 ```bash
-npm run check       # TypeScript, ESLint, Vitest
-npm run build       # production compilation and static route generation
-npm run test:e2e    # Playwright desktop + mobile; starts the production server
-```
-
-Playwright needs Chromium. This cloud environment already provides `/usr/bin/chromium`:
-
-```bash
+npm run check
+npm run build
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
 ```
 
-On other machines, run `npx playwright install chromium` first, or supply an installed Chromium executable using that variable. The cloud network policy blocks `cdn.playwright.dev`; the installed system browser avoids a download. Do not disable TLS or artifact verification.
+Playwright uses the installed system Chromium in this cloud environment. On other machines, install its browser with `npx playwright install chromium` or provide the executable path. The suite starts a production server when no server is running; build first and use a clean port.
 
-Browser tests cover the main meal lifecycle, reload persistence, goals, recipe CRUD, invalid quantities, search empty states, photo handling and storage errors. They exercise the demo implementation, not live AI/auth/database integrations.
+Tests cover label normalization, macro calculations, frozen historical records, private-account authorization, Convex function behavior, API contracts, server review, recipe portions, export safety, and desktop/mobile workflows. Auth/model/Convex tests include fixtures and local test harnesses; they do not certify a hosted deployment or nutrition-source accuracy.
 
-## Team handoff
+## Project references
 
-- [Detailed four-person implementation plan](docs/IMPLEMENTATION_PLAN.md): steps, ownership, independent workflows, acceptance criteria and integration milestones.
-- [API and integration contract](docs/API_CONTRACT.md): proposed routes, request/response conventions and replacement strategy.
-- `src/lib/contracts.ts`: shared TypeScript view models and `TrackerClient` interface.
-- `src/lib/demo-client.ts`: async local implementation with illustrative seed data.
-- `src/lib/client.ts`: single adapter selection point.
-- `src/lib/model.ts`: demo display arithmetic and date helpers. Production calculations move to Person 3's server-used package.
+- [Personal-use setup](docs/PERSONAL_USE.md)
+- [Four-person implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [API contract](docs/API_CONTRACT.md)
+- [Backend deployment](docs/DEPLOYMENT.md)
+- [Nutrition package](packages/nutrition/README.md)
+- [Recognition package and evaluation](packages/recognition/README.md)
 
-Person 2 owns server authentication, Convex, API routes, storage, authoritative writes and deployment. Person 3 owns verified nutrition and deterministic calculations. Person 4 owns text/image interpretation. Everyone can develop using fixed interfaces and fixtures before the other implementations are complete.
+## AI and reference data
 
-## Current limits
+Manual logging needs no AI key. Optional text/photo recognition uses server-only credentials, strict output validation and manual review. Real provider accuracy and measured-photo evaluation remain unverified. The bundled reference nutrition dataset is provisional and is not automatically imported into live storage. Start with your own package labels and source references.
 
-- No live Clerk account, Convex database, external AI calls or deployed service yet.
-- Text interpretation is a small deterministic demo parser; unknown phrases require manual correction.
-- Image input supports preview/type/size validation only.
-- Recipe portion logging and effective-dated goal history await backend/nutrition integration.
-- Goals are explicit user inputs; personalized energy prescriptions and body-weight trends are not implemented.
-- Browser storage is local to the device and is not a secure multi-user database. Production must recompute meal nutrients on the server and enforce ownership.
+CSV export contains meal records and their saved macros. It is not an automatic full-database restore; keep database backups for your foods, recipes and goals as well.

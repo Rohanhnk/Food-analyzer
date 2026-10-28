@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/server/auth";
-import { storage } from "@/server";
+import { nutritionService, storage } from "@/server";
 import { badRequest, handleRouteError, notFound } from "@/server/errors";
 import { validateWeightGrams } from "@/server/validation";
 
@@ -44,11 +44,20 @@ export async function PATCH(
     const name = typeof body.name === "string" && body.name.trim() ? body.name.trim() : existing.name;
     const cookedYieldGrams = body.cookedYieldGrams !== undefined ? validateWeightGrams(body.cookedYieldGrams, "cookedYieldGrams") : existing.cookedYieldGrams;
 
+    let ingredients = existing.ingredients;
+    if (body.ingredients !== undefined) {
+      if (!Array.isArray(body.ingredients) || !body.ingredients.length) throw badRequest("Recipe ingredients must be nonempty.");
+      const inputs = body.ingredients.map((ing: { foodId?: string; grams?: number }) => {
+        if (!ing || typeof ing.foodId !== "string") throw badRequest("Each ingredient requires a foodId.");
+        return { foodId: ing.foodId, grams: validateWeightGrams(ing.grams, "ingredients.grams"), confirmed: true };
+      });
+      ingredients = (await nutritionService.calculateMealItems(user.userId, inputs)).items;
+    }
     const updated = {
       ...existing,
       name,
       cookedYieldGrams,
-      ingredients: Array.isArray(body.ingredients) ? body.ingredients : existing.ingredients,
+      ingredients,
     };
 
     const saved = await storage.saveRecipe(user.userId, updated);

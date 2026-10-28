@@ -74,6 +74,8 @@ export default defineSchema({
         sourceVersion: v.string(),
         basis: v.union(v.literal("raw"), v.literal("cooked"), v.literal("as-served")),
         confirmed: v.boolean(),
+        recipeId: v.optional(v.string()),
+        snapshot: v.optional(v.any()),
       })
     ),
     version: v.optional(v.string()),
@@ -109,6 +111,7 @@ export default defineSchema({
         sourceVersion: v.string(),
         basis: v.union(v.literal("raw"), v.literal("cooked"), v.literal("as-served")),
         confirmed: v.boolean(),
+        recipeId: v.optional(v.string()),
         snapshot: v.optional(v.any()), // immutable provenance snapshot
       })
     ),

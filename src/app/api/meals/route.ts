@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/server/auth";
 import { nutritionService, storage } from "@/server";
@@ -48,11 +49,12 @@ export async function POST(req: NextRequest) {
       throw badRequest("Field 'items' must be a non-empty array.", "items");
     }
 
+    if (body.items.some((item: { confirmed?: unknown }) => !item || item.confirmed !== true)) throw badRequest("Confirm every portion before saving.");
     // Recompute authoritative nutrition on server
     const calculated = await nutritionService.calculateMealItems(user.userId, body.items);
 
     const meal: Meal = {
-      id: crypto.randomUUID(),
+      id: idempotencyKey ? createHash("sha256").update(JSON.stringify([user.userId, idempotencyKey])).digest("hex") : crypto.randomUUID(),
       date,
       timezone,
       type,
@@ -96,6 +98,10 @@ export async function GET(req: NextRequest) {
     const cursor = searchParams.get("cursor") ?? undefined;
     const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!, 10) : 50;
 
+    if (from) validateLocalDate(from, "from");
+    if (to) validateLocalDate(to, "to");
+    if (from && to && from > to) throw badRequest("from must not be after to.");
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw badRequest("limit must be between 1 and 100.");
     const result = await storage.listMealsRange(user.userId, from, to, cursor, limit);
     return NextResponse.json(result);
   } catch (error) {
